@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HawkTalos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="theme-dark">
+  <!-- Skip link for accessibility -->
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <!-- Global Top Bar -->
+  <header class="topbar" role="banner" aria-label="Global">
+    <div class="brand">
+      <div class="brand__logo" aria-hidden="true">
+        <a href="/"><img src="images/icon.png" class="logo"></a>
+      </div>
+      <div class="brand__text">
+        <h1 class="brand__title">HawkTalos</h1>
+      </div>
+    </div>
+
+    <nav class="topnav" aria-label="Primary">
+      <ul class="topnav__list">
+        <li><a class="topnav__link is-active" href="#dashboard">Dashboard</a></li>
+        <li><a class="topnav__link" href="#password-checker">Password</a></li>
+        <li><a class="topnav__link" href="#email-breach">Email</a></li>
+        <li><a class="topnav__link" href="#url-safety">URL</a></li>
+        <li><a class="topnav__link" href="#kev">KEV</a></li>
+        <li><a class="topnav__link" href="#news">News</a></li>
+        <li><a class="topnav__link" href="#learn">Learn</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" aria-label="Secondary">
+      <div class="card card--sidebar">
+        <h2 class="card__title">Quick Actions</h2>
+        <ul class="quick-actions">
+          <li><a class="btn btn--ghost" href="#password-checker">Run Password Check</a></li>
+          <li><a class="btn btn--ghost" href="#email-breach">Check Email Breaches</a></li>
+          <li><a class="btn btn--ghost" href="#url-safety">Scan URL Safety</a></li>
+          <li><a class="btn btn--ghost" href="#kev">View Exploited CVEs</a></li>
+        </ul>
+      </div>
+
+      <div class="card card--sidebar">
+        <h2 class="card__title">Your Last Scans</h2>
+        <ul class="history" id="history" data-bind="history">
+          <li class="history__item">
+            <span class="history__label">Password</span>
+            <time class="history__time" datetime="2025-11-09">Just now</time>
+          </li>
+          <li class="history__item">
+            <span class="history__label">Email</span>
+            <time class="history__time" datetime="2025-11-08">Yesterday</time>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main" class="main" role="main">
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="section">
+        <header class="section__header">
+          <h2 class="section__title">Dashboard</h2>
+          <p class="section__subtitle">Overview of your security posture</p>
+        </header>
+
+        <div class="grid grid--cards">
+          <!-- KPI Cards -->
+          <article class="card kpi">
+            <div class="kpi__label">Passwords Flagged</div>
+            <div class="kpi__value" data-bind="kpi-passwords">0</div>
+            <div class="kpi__hint">From Pwned Passwords</div>
+          </article>
+
+          <article class="card kpi">
+            <div class="kpi__label">Emails in Breaches</div>
+            <div class="kpi__value" data-bind="kpi-emails">0</div>
+            <div class="kpi__hint">HIBP account search</div>
+          </article>
+
+          <article class="card kpi">
+            <div class="kpi__label">Unsafe URLs</div>
+            <div class="kpi__value" data-bind="kpi-urls">0</div>
+            <div class="kpi__hint">Safe Browsing + PhishTank</div>
+          </article>
+
+          <article class="card kpi">
+            <div class="kpi__label">New KEVs</div>
+            <div class="kpi__value" data-bind="kpi-kev">0</div>
+            <div class="kpi__hint">CISA exploited CVEs</div>
+          </article>
+        </div>
+
+        <div class="grid grid--split">
+          <article class="card">
+            <header class="card__header">
+              <h3 class="card__title">Recently Added KEVs</h3>
+              <a class="card__link" href="#kev" aria-label="See more KEVs">See all →</a>
+            </header>
+            <ul class="list list--kev" id="kev-recent" data-bind="kev-recent">
+              <li class="list__row">
+                <span class="badge badge--critical">CVE-2025-24893</span>
+                <span class="muted">XWiki eval injection (RCE)</span>
+                <time datetime="2025-10-30" class="muted">Added Oct 30</time>
+              </li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <header class="card__header">
+              <h3 class="card__title">Cybersecurity Headlines</h3>
+              <a class="card__link" href="#news" aria-label="See more news">See all →</a>
+            </header>
+            <ul class="list list--news" id="news-brief" data-bind="news-brief">
+              <li class="list__row">
+                <span class="dot dot--info" aria-hidden="true"></span>
+                <span class="muted">Ransomware targets outdated VPN appliances</span>
+                <time datetime="2025-11-08" class="muted">Nov 8</time>
+              </li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- PASSWORD CHECKER -->
+      <section id="password-checker" class="section">
+        <header class="section__header">
+          <h2 class="section__title">Password Checker</h2>
+          <p class="section__subtitle">We never store your password. We use k‑anonymity (5‑char SHA‑1 prefix).</p>
+        </header>
+
+        <article class="card">
+          <form class="form" aria-labelledby="pwd-label">
+            <label id="pwd-label" class="form__label" for="password">Enter password</label>
+            <input id="password" name="password" class="input" type="password" placeholder="Use a strong passphrase…" autocomplete="off" />
+            <div class="form__row">
+              <button class="btn" type="submit" disabled aria-disabled="true">Check Password</button>
+              <p class="hint">Tips follow NIST SP 800‑63B (length > complexity).</p>
+            </div>
+          </form>
+
+          <div class="result" id="password-result" data-bind="password-result" aria-live="polite">
+            <div class="result__status">Result will appear here.</div>
+            <progress class="meter" max="100" value="0" aria-label="Strength meter"></progress>
+          </div>
+        </article>
+      </section>
+
+      <!-- EMAIL BREACH CHECK -->
+      <section id="email-breach" class="section">
+        <header class="section__header">
+          <h2 class="section__title">Email Breach Checker</h2>
+          <p class="section__subtitle">Check if an email appears in known breaches (HIBP API).</p>
+        </header>
+
+        <article class="card">
+          <form class="form" aria-labelledby="email-label">
+            <label id="email-label" class="form__label" for="email">Email address</label>
+            <input id="email" name="email" class="input" type="email" placeholder="you@example.com" autocomplete="off" />
+            <div class="form__row">
+              <button class="btn" type="submit" disabled aria-disabled="true">Check Breaches</button>
+              <p class="hint">Requires API key; rate limits apply. We won’t store your email.</p>
+            </div>
+          </form>
+
+          <div class="result table-scroll" id="email-result" data-bind="email-result" aria-live="polite">
+            <table class="table">
+              <caption class="visually-hidden">Breach results</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Breach</th>
+                  <th scope="col">Date</th>
+                  <th scope="col">Data Classes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>—</td><td>—</td><td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <!-- URL SAFETY -->
+      <section id="url-safety" class="section">
+        <header class="section__header">
+          <h2 class="section__title">URL Safety</h2>
+          <p class="section__subtitle">Check URLs against Google Safe Browsing & PhishTank.</p>
+        </header>
+
+        <article class="card">
+          <form class="form" aria-labelledby="url-label">
+            <label id="url-label" class="form__label" for="url">Website URL</label>
+            <input id="url" name="url" class="input" type="url" placeholder="https://example.com" />
+            <div class="form__row">
+              <button class="btn" type="submit" disabled aria-disabled="true">Scan URL</button>
+              <p class="hint">Educational use only (Safe Browsing v4). PhishTank limits apply.</p>
+            </div>
+          </form>
+
+          <div class="grid grid--split">
+            <div class="panel">
+              <h3 class="panel__title">Safe Browsing</h3>
+              <div class="badge badge--neutral" data-bind="sb-verdict">Unknown</div>
+              <p class="muted small">Lookup API result</p>
+            </div>
+            <div class="panel">
+              <h3 class="panel__title">PhishTank</h3>
+              <div class="badge badge--neutral" data-bind="pt-verdict">Unknown</div>
+              <p class="muted small">URL reputation</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- KEV -->
+      <section id="kev" class="section">
+        <header class="section__header">
+          <h2 class="section__title">CISA Known Exploited Vulnerabilities</h2>
+          <p class="section__subtitle">Recently exploited CVEs to watch.</p>
+        </header>
+
+        <article class="card table-scroll">
+          <table class="table">
+            <caption class="visually-hidden">Known Exploited Vulnerabilities</caption>
+            <thead>
+              <tr>
+                <th scope="col">CVE</th>
+                <th scope="col">Vendor/Project</th>
+                <th scope="col">Vulnerability Name</th>
+                <th scope="col">Date Added</th>
+                <th scope="col">Due Date</th>
+              </tr>
+            </thead>
+            <tbody id="kev-table" data-bind="kev-table">
+              <tr>
+                <td><span class="badge badge--critical">CVE-2025-24893</span></td>
+                <td>XWiki</td>
+                <td>Eval Injection (RCE)</td>
+                <td>2025‑10‑30</td>
+                <td>2025‑11‑20</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
+      </section>
+
+      <!-- NEWS -->
+      <section id="news" class="section">
+        <header class="section__header">
+          <h2 class="section__title">Cybersecurity News</h2>
+          <p class="section__subtitle">Curated headlines for awareness.</p>
+        </header>
+
+        <div class="grid grid--cards" id="news-cards" data-bind="news-cards">
+          <article class="card card--news">
+            <h3 class="card__title">Sample Headline</h3>
+            <p class="muted">A short summary will be displayed here.</p>
+            <a class="card__link" href="#" target="_blank" rel="noopener">Read article →</a>
+          </article>
+          <article class="card card--news">
+            <h3 class="card__title">Another Headline</h3>
+            <p class="muted">Use filters to show security‑focused sources.</p>
+            <a class="card__link" href="#" target="_blank" rel="noopener">Read article →</a>
+          </article>
+        </div>
+      </section>
+
+      <!-- LEARN -->
+      <section id="learn" class="section">
+        <header class="section__header">
+          <h2 class="section__title">Learn & Improve</h2>
+          <p class="section__subtitle">Short modules: passwords, MFA, phishing tells.</p>
+        </header>
+
+        <div class="grid grid--cards">
+          <article class="card card--lesson">
+            <h3 class="card__title">Build Better Passwords</h3>
+            <ul class="ticks">
+              <li>Use long passphrases (length over complexity)</li>
+              <li>Screen against known breached passwords</li>
+              <li>Use a password manager + MFA</li>
+            </ul>
+          </article>
+
+          <article class="card card--lesson">
+            <h3 class="card__title">Spot Phishing Fast</h3>
+            <ul class="ticks">
+              <li>Check sender & domain carefully</li>
+              <li>Hover to inspect links before clicking</li>
+              <li>Verify unexpected MFA prompts</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer" role="contentinfo">
+        <p class="muted small">© 2025 HawkTalos · Open Source · Designed for education</p>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

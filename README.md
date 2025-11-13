@@ -26,7 +26,7 @@ HawkTalos is an open-source intelligent application designed to help users impro
   - CISA KEV Catalog
   - NewsAPI
 
-**Project Team**
+**🧑‍💻Team Members**
 - Project Manager: Jamie Crosby
 - Team Lead: Hrijuta
 - Performance & Documentation Analyst: Ankita Varma

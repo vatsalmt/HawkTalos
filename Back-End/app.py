@@ -11,6 +11,9 @@ from services import (
     generate_certificate
 )
 import logging
+# ------------ If the frontend and backend  is hosted separately on a different origin, enable CORS in Flask ------------
+from flask_cors import CORS 
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Configure logging
 logging.basicConfig(

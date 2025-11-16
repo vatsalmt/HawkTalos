@@ -164,12 +164,8 @@ function setText(sel, txt) { const el = $(sel); if (el) el.textContent = txt; }
       </tr>
     `).join('');
 
-/* ===== CyberQuest Quiz (start/next/prev/submit/certificate) ===== */
+// ===== CyberQuest Quiz (start/next/prev/submit/certificate) ===== 
 (function quizModule() {
-  const API_BASE = typeof window.API_BASE !== 'undefined'
-    ? window.API_BASE
-    : (location.hostname === 'localhost' ? 'http://127.0.0.1:5000' : 'https://YOUR-BACKEND-HOST');
-
   const startPanel = document.getElementById('quiz-start-panel');
   const questionPanel = document.getElementById('quiz-question-panel');
   const resultPanel = document.getElementById('quiz-result-panel');

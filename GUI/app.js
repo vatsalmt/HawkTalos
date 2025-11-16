@@ -164,6 +164,208 @@ function setText(sel, txt) { const el = $(sel); if (el) el.textContent = txt; }
       </tr>
     `).join('');
 
+/* ===== CyberQuest Quiz (start/next/prev/submit/certificate) ===== */
+(function quizModule() {
+  const API_BASE = typeof window.API_BASE !== 'undefined'
+    ? window.API_BASE
+    : (location.hostname === 'localhost' ? 'http://127.0.0.1:5000' : 'https://YOUR-BACKEND-HOST');
+
+  const startPanel = document.getElementById('quiz-start-panel');
+  const questionPanel = document.getElementById('quiz-question-panel');
+  const resultPanel = document.getElementById('quiz-result-panel');
+
+  const startForm = document.getElementById('quiz-start-form');
+  const startBtn = document.getElementById('quiz-start-btn');
+  const usernameInput = document.getElementById('quiz-username');
+  const diffInput = document.getElementById('quiz-difficulty');
+
+  const qText = document.getElementById('quiz-question-text');
+  const qOptions = document.getElementById('quiz-answer-form');
+  const qCategory = document.getElementById('quiz-category');
+  const qDiff = document.getElementById('quiz-diff');
+  const qPrev = document.getElementById('quiz-prev');
+  const qNext = document.getElementById('quiz-next');
+  const qSubmit = document.getElementById('quiz-submit');
+  const qProgress = document.getElementById('quiz-progress');
+  const qProgressText = document.getElementById('quiz-progress-text');
+
+  const rScore = document.getElementById('quiz-score');
+  const rPct = document.getElementById('quiz-percentage');
+  const rTier = document.getElementById('quiz-tier');
+  const rQuote = document.getElementById('quiz-quote');
+  const rTableBody = document.querySelector('#quiz-breakdown tbody');
+  const rRestart = document.getElementById('quiz-restart');
+  const rCert = document.getElementById('quiz-certificate');
+
+  let sessionId = null;
+  let questions = [];           // [{id, question, options, category, difficulty}]
+  let answers = {};             // {"1":"A", "2":"C", ...}
+  let idx = 0;                  // current question index
+  let username = 'Anonymous';
+
+  async function apiPost(path, payload = {}) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json().catch(()=>({ok:false,error:'Bad JSON'}));
+    if (!res.ok) throw new Error(json.error || `${res.status} ${res.statusText}`);
+    return json;
+  }
+
+  function showPanel(panel) {
+    [startPanel, questionPanel, resultPanel].forEach(p => p && (p.hidden = true));
+    if (panel) panel.hidden = false;
+  }
+
+  function updateProgress() {
+    const total = questions.length || 1;
+    const pct = Math.round(((idx+1)/total)*100);
+    qProgress.value = pct;
+    qProgressText.textContent = `Question ${idx+1} / ${total}`;
+  }
+
+  function renderQuestion() {
+    const q = questions[idx];
+    if (!q) return;
+
+    qText.textContent = q.question;
+    qCategory.textContent = `Category: ${q.category || 'General'}`;
+    qDiff.textContent = `Difficulty: ${q.difficulty || 'mixed'}`;
+    updateProgress();
+
+    // render options (A/B/C/D etc.)
+    qOptions.innerHTML = '';
+    const selected = answers[q.id] || null;
+
+    q.options.forEach((opt, i) => {
+      const letter = String.fromCharCode(65 + i); // A,B,C,...
+      const id = `opt-${q.id}-${letter}`;
+      const row = document.createElement('label');
+      row.className = 'quiz__option';
+      row.setAttribute('for', id);
+      row.innerHTML = `
+        <input type="radio" id="${id}" name="q-${q.id}" value="${letter}" ${selected===letter?'checked':''} />
+        <div><strong>${letter}.</strong> ${opt}</div>
+        <div></div>
+      `;
+      qOptions.appendChild(row);
+    });
+
+    qPrev.disabled = (idx === 0);
+    const last = (idx === questions.length - 1);
+    qNext.hidden = last;
+    qSubmit.hidden = !last;
+
+    // on selection, store answer
+    qOptions.addEventListener('change', (e) => {
+      if (e.target && e.target.type === 'radio') {
+        answers[q.id] = e.target.value;
+      }
+    }, { once: true }); // re-bind per question render
+  }
+
+  async function startQuiz(e) {
+    e.preventDefault();
+    startBtn.disabled = true;
+
+    username = (usernameInput.value || 'Anonymous').trim();
+    const difficulty = diffInput.value || 'mixed';
+
+    try {
+      const resp = await apiPost('/api/quiz/start', { username, difficulty });
+      if (!resp.ok) throw new Error(resp.error || 'Failed to start quiz');
+      const data = resp.data || {};
+      sessionId = data.session_id;
+      questions = data.questions || [];
+      answers = {};
+      idx = 0;
+      if (!Array.isArray(questions) || questions.length === 0) {
+        throw new Error('No questions returned by server.');
+      }
+      showPanel(questionPanel);
+      renderQuestion();
+    } catch (err) {
+      alert(`Unable to start quiz: ${err.message}`);
+    } finally {
+      startBtn.disabled = false;
+    }
+  }
+
+  async function submitQuiz() {
+    // fill unanswered as blank to be explicit
+    questions.forEach(q => { if (!(q.id in answers)) answers[q.id] = ''; });
+
+    try {
+      const resp = await apiPost('/api/quiz/submit', {
+        username, session_id: sessionId, answers
+      });
+      if (!resp.ok) throw new Error(resp.error || 'Submit failed');
+      const data = resp.data || {};
+
+      // KPI summary
+      rScore.textContent = `${data.score} / ${data.total}`;
+      rPct.textContent = `${data.percentage}%`;
+      rTier.textContent = data.performance_tier || '—';
+      rQuote.textContent = data.motivational_quote || '';
+
+      // Certificate
+      rCert.hidden = !data.certificate_available;
+      if (!rCert.hidden) {
+        rCert.onclick = () => {
+          const url = `${API_BASE}/api/quiz/certificate/${encodeURIComponent(sessionId)}?username=${encodeURIComponent(username)}`;
+          window.open(url, '_blank');
+        };
+      }
+
+      // Breakdown table
+      const rows = (data.results || []).map((r, i) => {
+        const ok = r.is_correct ? 'Correct' : 'Incorrect';
+        const chip = r.is_correct ? 'quiz__chip quiz__chip--ok' : 'quiz__chip quiz__chip--bad';
+        return `
+          <tr>
+            <td>${i+1}</td>
+            <td>${r.question}</td>
+            <td>${r.your_answer || '—'}</td>
+            <td>${r.correct_answer || '—'}</td>
+            <td><span class="${chip}">${ok}</span></td>
+          </tr>
+        `;
+      }).join('');
+      rTableBody.innerHTML = rows || `<tr><td colspan="5">No details available.</td></tr>`;
+
+      showPanel(resultPanel);
+    } catch (err) {
+      alert(`Unable to submit quiz: ${err.message}`);
+    }
+  }
+
+  function restartQuiz() {
+    sessionId = null; questions = []; answers = {}; idx = 0;
+    startForm.reset();
+    showPanel(startPanel);
+  }
+
+  // Event bindings
+  startForm?.addEventListener('submit', startQuiz);
+  qPrev?.addEventListener('click', () => { if (idx > 0) { idx -= 1; renderQuestion(); }});
+  qNext?.addEventListener('click', () => {
+    // require an answer before moving on (optional)
+    const q = questions[idx]; const sel = document.querySelector(`input[name="q-${q.id}"]:checked`);
+    if (!sel) { alert('Please select an answer to continue.'); return; }
+    answers[q.id] = sel.value;
+    if (idx < questions.length - 1) { idx += 1; renderQuestion(); }
+  });
+  qSubmit?.addEventListener('click', () => {
+    const q = questions[idx]; const sel = document.querySelector(`input[name="q-${q.id}"]:checked`);
+    if (sel) answers[q.id] = sel.value;
+    submitQuiz();
+  });
+  rRestart?.addEventListener('click', restartQuiz);
+})();
+
+
     // Fill “recent” list
     if (kevRecent) {
       kevRecent.innerHTML = items.slice(0, 5).map(r => `

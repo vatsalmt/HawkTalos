@@ -231,6 +231,29 @@ a:focus, button:focus, .topnav__link:focus, .btn:focus, .input:focus {
   outline: 2px solid var(--focus); outline-offset: 2px;
 }
 
+/* ===== Quiz styles ===== */
+.quiz__panel { display: grid; gap: 14px; }
+.quiz__top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: space-between; }
+.quiz__progress { display: flex; align-items: center; gap: 10px; }
+#quiz-progress { width: 220px; height: 10px; border: 1px solid var(--border); border-radius: 6px; background: #0b131c; }
+.quiz__question { display: grid; gap: 12px; }
+.quiz__options { display: grid; gap: 8px; }
+.quiz__option {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+  padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: #0f1824;
+}
+.quiz__option:hover { background: #0c1522; }
+.quiz__option input[type="radio"] { width: 18px; height: 18px; }
+.quiz__nav { display: flex; align-items: center; gap: 10px; }
+.quiz__nav .spacer { flex: 1; }
+
+/* Result chips */
+.quiz__chip {
+  display:inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 12px; border: 1px solid transparent;
+}
+.quiz__chip--ok { background:#0f2a1a; color:#72e3a6; border-color:#1a3d29; }
+.quiz__chip--bad { background:#2a0f12; color:#ff7a7a; border-color:#3d1a1e; }
+
 /* Optional Light Theme (switch body class to theme-light)
 body.theme-light {
   --bg: #f6f9ff;

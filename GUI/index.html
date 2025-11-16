@@ -308,6 +308,118 @@
         </div>
       </section>
 
+      <!-- QUIZ -->
+      <section id="quiz" class="section">
+        <header class="section__header">
+          <h2 class="section__title">CyberQuest Quiz</h2>
+          <p class="section__subtitle">
+            Test your security awareness. Score <strong>80%+</strong> to earn a certificate.
+          </p>
+        </header>
+
+        <article class="card" aria-live="polite">
+          <!-- Start Panel -->
+          <div id="quiz-start-panel" class="quiz__panel">
+            <form class="form" id="quiz-start-form">
+              <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <label for="quiz-username" class="form__label">Your name (optional)</label>
+                  <input id="quiz-username" name="username" class="input" type="text" placeholder="Grace Maria" />
+                </div>
+                <div>
+                  <label for="quiz-difficulty" class="form__label">Difficulty</label>
+                  <select id="quiz-difficulty" name="difficulty" class="input">
+                    <option value="mixed" selected>Mixed</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form__row">
+                <button id="quiz-start-btn" type="submit" class="btn">Start Quiz</button>
+                <p class="hint">20 questions • ~5–7 minutes</p>
+              </div>
+            </form>
+          </div>
+
+          <!-- Question Panel -->
+          <div id="quiz-question-panel" class="quiz__panel" hidden>
+            <div class="quiz__top">
+              <div class="badge badge--neutral" id="quiz-category">Category: —</div>
+              <div class="badge badge--neutral" id="quiz-diff">Difficulty: —</div>
+              <div class="quiz__progress">
+                <span id="quiz-progress-text">Question 1 / 20</span>
+                <progress id="quiz-progress" max="100" value="0" aria-label="Quiz progress"></progress>
+              </div>
+            </div>
+
+            <div class="quiz__question">
+              <h3 id="quiz-question-text" class="card__title">Question text</h3>
+              <form id="quiz-answer-form" class="quiz__options" aria-labelledby="quiz-question-text">
+                <!-- Options will be injected here -->
+              </form>
+            </div>
+
+            <div class="quiz__nav">
+              <button id="quiz-prev" class="btn btn--ghost" type="button" disabled>← Previous</button>
+              <div class="spacer"></div>
+              <button id="quiz-next" class="btn" type="button">Next →</button>
+              <button id="quiz-submit" class="btn" type="button" hidden>Submit Quiz</button>
+            </div>
+          </div>
+
+          <!-- Result Panel -->
+          <div id="quiz-result-panel" class="quiz__panel" hidden>
+            <header class="card__header">
+              <h3 class="card__title">Your Results</h3>
+            </header>
+
+            <div class="grid grid--split">
+              <div class="panel">
+                <div class="kpi__label">Score</div>
+                <div class="kpi__value" id="quiz-score">0 / 0</div>
+                <div class="kpi__hint">Correct answers</div>
+              </div>
+              <div class="panel">
+                <div class="kpi__label">Percentage</div>
+                <div class="kpi__value" id="quiz-percentage">0%</div>
+                <div class="kpi__hint">Passing ≥ 80%</div>
+              </div>
+              <div class="panel">
+                <div class="kpi__label">Performance</div>
+                <div class="kpi__value" id="quiz-tier">—</div>
+                <div class="kpi__hint">Overall tier</div>
+              </div>
+            </div>
+
+            <p class="muted" id="quiz-quote">Keep learning—every step improves your security!</p>
+
+            <div class="form__row">
+              <button id="quiz-restart" class="btn btn--ghost" type="button">Restart Quiz</button>
+              <button id="quiz-certificate" class="btn" type="button" hidden>🎓 Download Certificate</button>
+            </div>
+
+            <div class="table-scroll" style="margin-top: 12px;">
+              <table class="table" id="quiz-breakdown">
+                <caption class="visually-hidden">Answer breakdown</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Question</th>
+                    <th scope="col">Your Answer</th>
+                    <th scope="col">Correct</th>
+                    <th scope="col">Result</th>
+                  </tr>
+                </thead>
+                <tbody><!-- rows injected --></tbody>
+              </table>
+            </div>
+          </div>
+        </article>
+      </section>
+
       <footer class="footer" role="contentinfo">
         <p class="muted small">© 2025 HawkTalos · Open Source · Designed for education</p>
       </footer>

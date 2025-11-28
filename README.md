@@ -52,3 +52,7 @@
 | 🧩 Risk & QA Analyst | Vatsal Trivedi | [GitHub](https://github.com/vatsalmt) |
 | 🛡️ Security Analyst | Junior Bone | [GitHub](https://github.com/) |
 
+## 🌐 Live Demo / Hosted Version
+
+You can access the live hosted version of HawkTalos here:  
+[https://<your-hosted-domain>](https://hawktalos-railway-production.up.railway.app/)

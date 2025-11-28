@@ -55,4 +55,4 @@
 ## 🌐 Live Demo / Hosted Version
 
 You can access the live hosted version of HawkTalos here:  
-[https://<your-hosted-domain>](https://hawktalos-railway-production.up.railway.app/)
+[https://hawktalos-railway-production.up.railway.app/](https://hawktalos-railway-production.up.railway.app/)

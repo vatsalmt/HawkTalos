@@ -12,17 +12,13 @@ from config import *
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-HTTP_TIMEOUT = 10  # seconds
+HTTP_TIMEOUT = 10  
 
-# Storage for quiz sessions (in production, use Redis or a database)
 quiz_sessions = {}
 
 # ------------- HIBP -------------
 def check_password_pwned(password: str) -> Dict[str, Any]:
-    """
-    Check if a password has been compromised using HIBP Pwned Passwords API.
-    Uses k-anonymity model - only sends first 5 chars of SHA1 hash.
-    """
+   
     try:
         sha1 = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()
         prefix, suffix = sha1[:5], sha1[5:]
@@ -58,7 +54,7 @@ def check_password_pwned(password: str) -> Dict[str, Any]:
         return {"ok": False, "error": str(e)}
 
 def check_account_breaches(account: str) -> Dict[str, Any]:
-    """Check if an account (email) has been involved in data breaches."""
+ 
     if not HIBP_API_KEY:
         return {
             "ok": False,
@@ -102,22 +98,37 @@ def check_account_breaches(account: str) -> Dict[str, Any]:
 
 # ------------- LeakCheck -------------
 def leakcheck_lookup_email(email: str) -> Dict[str, Any]:
-    """Check if an email appears in leaked databases using LeakCheck."""
+    
     try:
-        headers = {"Accept": "application/json"}
-        if LEAKCHECK_API_KEY:
-            headers["Authorization"] = f"Bearer {LEAKCHECK_API_KEY}"
+      
+        params = {
+            "key": LEAKCHECK_API_KEY,
+            "check": email,
+            "type": "email" 
+        }
         
         res = requests.get(
             LEAKCHECK_LOOKUP,
-            params={"q": email},
-            headers=headers,
+            params=params,
             timeout=HTTP_TIMEOUT
         )
         
         if res.status_code == 200:
             data = res.json()
-            return {"ok": True, "data": data}
+          
+            if data.get("success") == True:
+                return {"ok": True, "data": data}
+            elif data.get("success") == False and data.get("found") == False:
+             
+                return {
+                    "ok": True,
+                    "data": {
+                        "found": False,
+                        "message": "No leaks found for this email."
+                    }
+                }
+            else:
+                return {"ok": False, "error": data.get("error", "Unknown error")}
         elif res.status_code == 404:
             return {
                 "ok": True,
@@ -132,9 +143,9 @@ def leakcheck_lookup_email(email: str) -> Dict[str, Any]:
         logger.exception("LeakCheck lookup failed")
         return {"ok": False, "error": str(e)}
 
-# ------------- CheckPhish (Bolster AI) -------------
+# ------------- CheckPhish -------------
 def checkphish_submit_scan(payload: dict) -> Dict[str, Any]:
-    """Submit a scan job to CheckPhish (Bolster.ai)"""
+
     try:
         res = requests.post(CHECKPHISH_SCAN, json=payload, timeout=HTTP_TIMEOUT)
         if res.status_code in (200, 201):
@@ -149,7 +160,7 @@ def checkphish_submit_scan(payload: dict) -> Dict[str, Any]:
         return {"ok": False, "error": str(e)}
 
 def checkphish_get_status(payload: dict) -> Dict[str, Any]:
-    """Check status of a submitted CheckPhish job"""
+
     try:
         res = requests.post(CHECKPHISH_STATUS, json=payload, timeout=HTTP_TIMEOUT)
         if res.status_code in (200, 201):
@@ -167,9 +178,7 @@ def checkphish_scan_email(raw_email_text: str,
                           wait_for_result: bool = True,
                           poll_interval: float = 2.0,
                           timeout: float = 30.0) -> Dict[str, Any]:
-    """
-    Submit an email to CheckPhish and optionally poll until result is ready.
-    """
+
     if not CHECKPHISH_API_KEY:
         return {"ok": False, "error": "No CheckPhish API key configured (CHECKPHISH_API_KEY)"}
 
@@ -214,7 +223,7 @@ def checkphish_scan_email(raw_email_text: str,
         time.sleep(poll_interval)
 
 def checkphish_scan_url(url_to_scan: str, wait_for_result=True, poll_interval=2.0, timeout=30.0) -> Dict[str, Any]:
-    """Scan a URL using CheckPhish (Bolster.ai)"""
+
     if not CHECKPHISH_API_KEY:
         return {"ok": False, "error": "No CheckPhish API key configured (CHECKPHISH_API_KEY)"}
     
@@ -236,7 +245,6 @@ def checkphish_scan_url(url_to_scan: str, wait_for_result=True, poll_interval=2.
     if not wait_for_result:
         return {"ok": True, "data": {"jobID": job_id}}
 
-    # Poll status endpoint
     start = time.time()
     while True:
         status_payload = {"apiKey": CHECKPHISH_API_KEY, "jobID": job_id}
@@ -260,7 +268,7 @@ def checkphish_scan_url(url_to_scan: str, wait_for_result=True, poll_interval=2.
 
 # ------------- Google Safe Browsing -------------
 def google_safe_browsing_check(url_to_check: str) -> Dict[str, Any]:
-    """Check URL against Google Safe Browsing database."""
+
     try:
         if not GOOGLE_SAFE_BROWSING_KEY:
             return {"ok": False, "error": "No Google Safe Browsing API key configured"}
@@ -304,7 +312,6 @@ def phishtank_check_url(url_to_check: str) -> Dict[str, Any]:
         except Exception as e:
             logger.exception("PhishTank API call failed")
 
-    # Fallback to CSV
     csv_url = "https://data.phishtank.com/data/online-valid.csv"
     try:
         res = requests.get(csv_url, timeout=HTTP_TIMEOUT)
@@ -323,7 +330,7 @@ def phishtank_check_url(url_to_check: str) -> Dict[str, Any]:
 
 # ------------- Aggregate URL check -------------
 def aggregate_url_checks(url_to_check: str) -> Dict[str, Any]:
-    """Aggregate URL checks from multiple sources."""
+   
     results = {
         "google_safe_browsing": google_safe_browsing_check(url_to_check),
         "phishtank": phishtank_check_url(url_to_check),
@@ -332,20 +339,18 @@ def aggregate_url_checks(url_to_check: str) -> Dict[str, Any]:
     verdict = "safe"
     threat_types = []
 
-    # Check Google Safe Browsing
+    
     g = results.get("google_safe_browsing", {})
     if g.get("ok") and g.get("data", {}).get("matches"):
         verdict = "malicious"
         for match in g["data"]["matches"]:
             threat_types.append(match.get("threatType", "Unknown"))
     
-    # Check PhishTank
     p = results.get("phishtank", {})
     if p.get("ok") and p.get("data", {}).get("found") is True:
         verdict = "malicious"
         threat_types.append("PHISHING")
     
-    # If no threats found but checks succeeded
     if verdict == "safe":
         if g.get("ok") or p.get("ok"):
             verdict = "safe"
@@ -360,7 +365,7 @@ def aggregate_url_checks(url_to_check: str) -> Dict[str, Any]:
 
 # ------------- CISA KEV feed -------------
 def get_cisa_kev() -> Dict[str, Any]:
-    """Fetch CISA Known Exploited Vulnerabilities catalog."""
+   
     try:
         res = requests.get(CISA_KEV_JSON, timeout=HTTP_TIMEOUT)
         if res.status_code == 200:
@@ -374,36 +379,23 @@ def get_cisa_kev() -> Dict[str, Any]:
 # ==================== QUIZ GAME FUNCTIONS ====================
 
 def get_random_quiz_questions(num_questions: int = 20, difficulty: str = "mixed") -> Dict[str, Any]:
-    """
-    Get a random set of quiz questions.
-    
-    Args:
-        num_questions: Number of questions to return (default 20)
-        difficulty: Filter by difficulty - "easy", "medium", "hard", or "mixed"
-    
-    Returns:
-        Dict with session_id and questions
-    """
+  
     try:
         from quiz_data import QUIZ_QUESTIONS
         
-        # Filter by difficulty if specified
         if difficulty != "mixed":
             filtered_questions = [q for q in QUIZ_QUESTIONS if q.get("difficulty") == difficulty]
         else:
             filtered_questions = QUIZ_QUESTIONS
         
-        # Ensure we have enough questions
         if len(filtered_questions) < num_questions:
             logger.warning(f"Not enough questions for difficulty {difficulty}. Using all available.")
             selected_questions = filtered_questions
         else:
             selected_questions = random.sample(filtered_questions, num_questions)
         
-        # Create session
         session_id = str(uuid.uuid4())
         
-        # Prepare questions (remove correct answers for client)
         questions_for_client = []
         for q in selected_questions:
             questions_for_client.append({
@@ -414,7 +406,6 @@ def get_random_quiz_questions(num_questions: int = 20, difficulty: str = "mixed"
                 "difficulty": q.get("difficulty", "medium")
             })
         
-        # Store session data
         quiz_sessions[session_id] = {
             "questions": selected_questions,
             "started_at": datetime.now().isoformat(),
@@ -437,19 +428,9 @@ def get_random_quiz_questions(num_questions: int = 20, difficulty: str = "mixed"
         return {"ok": False, "error": str(e)}
 
 def submit_quiz_answers(session_id: str, answers: Dict[str, str], username: str = "Anonymous") -> Dict[str, Any]:
-    """
-    Grade quiz answers and return results.
-    
-    Args:
-        session_id: The quiz session ID
-        answers: Dict mapping question IDs to selected answers
-        username: Username for the certificate
-    
-    Returns:
-        Dict with score, results, and grading details
-    """
+
     try:
-        # Check if session exists
+
         if session_id not in quiz_sessions:
             return {"ok": False, "error": "Invalid session ID"}
         
@@ -460,7 +441,6 @@ def submit_quiz_answers(session_id: str, answers: Dict[str, str], username: str 
         
         questions = session["questions"]
         
-        # Grade answers
         correct_count = 0
         total_count = len(questions)
         detailed_results = []
@@ -483,10 +463,10 @@ def submit_quiz_answers(session_id: str, answers: Dict[str, str], username: str 
                 "explanation": question.get("explanation", "")
             })
         
-        # Calculate score percentage
+        
         score_percentage = (correct_count / total_count * 100) if total_count > 0 else 0
         
-        # Determine performance tier and get motivational quote
+        
         if score_percentage < 45:
             performance_tier = "Failed"
             motivational_quote = "Failure is simply the opportunity to begin again, this time more intelligently."
@@ -497,13 +477,13 @@ def submit_quiz_answers(session_id: str, answers: Dict[str, str], username: str 
             motivational_quote = "Good effort! Every click toward awareness counts."
             passed = False
             certificate_available = False
-        else:  # >= 80%
+        else:  
             performance_tier = "Passed"
             motivational_quote = "Well done! You've mastered the basics of cybersecurity awareness."
             passed = True
             certificate_available = True
         
-        # Update session
+        
         session["completed"] = True
         session["completed_at"] = datetime.now().isoformat()
         session["score"] = correct_count
@@ -534,7 +514,7 @@ def submit_quiz_answers(session_id: str, answers: Dict[str, str], username: str 
         return {"ok": False, "error": str(e)}
 
 def _calculate_grade(percentage: float) -> str:
-    """Calculate letter grade from percentage."""
+    
     if percentage >= 90:
         return "A"
     elif percentage >= 80:
@@ -547,23 +527,13 @@ def _calculate_grade(percentage: float) -> str:
         return "F"
 
 def generate_certificate(session_id: str, username: str = "Anonymous") -> Dict[str, Any]:
-    """
-    Generate a PDF certificate for a completed quiz.
-    
-    Args:
-        session_id: The quiz session ID
-        username: Name to appear on certificate
-    
-    Returns:
-        Dict with pdf_path or error
-    """
+
     try:
         from reportlab.lib.pagesizes import letter, landscape
         from reportlab.pdfgen import canvas
         from reportlab.lib.units import inch
         from reportlab.lib.colors import HexColor
         
-        # Check if session exists
         if session_id not in quiz_sessions:
             return {"ok": False, "error": "Invalid session ID"}
         
@@ -572,7 +542,6 @@ def generate_certificate(session_id: str, username: str = "Anonymous") -> Dict[s
         if not session.get("completed"):
             return {"ok": False, "error": "Quiz not completed yet"}
         
-        # Check if user passed with 80% or higher
         percentage = session.get("percentage", 0)
         if percentage < 80:
             performance_tier = session.get("performance_tier", "Failed")
@@ -581,53 +550,43 @@ def generate_certificate(session_id: str, username: str = "Anonymous") -> Dict[s
                 "error": f"Certificate only available for Passed tier (80%+). Your performance: {performance_tier} ({percentage:.1f}%)"
             }
         
-        # Create PDF (cross-platform compatible)
         import tempfile
         
         pdf_filename = f"certificate_{session_id}.pdf"
         
-        # Use system temp directory (works on Windows, Mac, Linux)
         temp_dir = tempfile.gettempdir()
         pdf_path = os.path.join(temp_dir, pdf_filename)
         
         c = canvas.Canvas(pdf_path, pagesize=landscape(letter))
         width, height = landscape(letter)
         
-        # Colors
         primary_color = HexColor("#1a73e8")
         secondary_color = HexColor("#34a853")
         text_color = HexColor("#202124")
         
-        # Draw border
         c.setStrokeColor(primary_color)
         c.setLineWidth(3)
         c.rect(0.5*inch, 0.5*inch, width-inch, height-inch)
         
-        # Draw inner border
         c.setStrokeColor(secondary_color)
         c.setLineWidth(1)
         c.rect(0.6*inch, 0.6*inch, width-1.2*inch, height-1.2*inch)
         
-        # Title
         c.setFont("Helvetica-Bold", 36)
         c.setFillColor(primary_color)
         c.drawCentredString(width/2, height-1.5*inch, "CERTIFICATE OF COMPLETION")
         
-        # Subtitle
         c.setFont("Helvetica", 18)
         c.setFillColor(text_color)
         c.drawCentredString(width/2, height-2*inch, "CyberQuest Security Awareness Training")
         
-        # Awarded to
         c.setFont("Helvetica", 14)
         c.drawCentredString(width/2, height-2.8*inch, "This certificate is proudly awarded to")
         
-        # Username
         c.setFont("Helvetica-Bold", 32)
         c.setFillColor(secondary_color)
         c.drawCentredString(width/2, height-3.5*inch, username)
         
-        # Achievement text
         c.setFont("Helvetica", 14)
         c.setFillColor(text_color)
         score = session.get("score", 0)
@@ -644,19 +603,16 @@ def generate_certificate(session_id: str, username: str = "Anonymous") -> Dict[s
             f"Score: {score}/{total} ({percentage:.1f}%) - Performance: {performance_tier} - Grade: {_calculate_grade(percentage)}"
         )
         
-        # Date
         completed_at = session.get("completed_at", datetime.now().isoformat())
         date_str = datetime.fromisoformat(completed_at).strftime("%B %d, %Y")
         c.setFont("Helvetica", 12)
         c.drawCentredString(width/2, height-5.5*inch, f"Date: {date_str}")
         
-        # Footer
         c.setFont("Helvetica-Oblique", 10)
         c.setFillColor(HexColor("#5f6368"))
         c.drawCentredString(width/2, 1*inch, "🦅 HawkTalos - Protecting You Through Awareness")
         c.drawCentredString(width/2, 0.7*inch, f"Session ID: {session_id}")
         
-        # Save PDF
         c.save()
         
         logger.info(f"Certificate generated for {username} (session: {session_id})")

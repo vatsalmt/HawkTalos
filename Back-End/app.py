@@ -11,26 +11,23 @@ from services import (
     generate_certificate
 )
 import logging
-# ------------ If the frontend and backend  is hosted separately on a different origin, enable CORS in Flask ------------
+
 from flask_cors import CORS 
+
+app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
 
 # ---------------- Password Checker ----------------
 @app.route("/api/password/check", methods=["GET", "POST"])
 def password_check():
-    """
-    Check if a password has been compromised in known data breaches.
-    Accepts password via query param 'p', form data, or JSON body.
-    """
+    
     password = request.args.get("p") or request.form.get("p")
     if not password:
         json_data = request.get_json(silent=True)
@@ -43,13 +40,10 @@ def password_check():
     result = check_password_pwned(password)
     return jsonify(result)
 
-# ---------------- Account / Email Breach ----------------
+#---------------- Account / Email Breach ----------------
 @app.route("/api/email/check", methods=["GET", "POST"])
 def email_check():
-    """
-    Check if an email has been involved in data breaches.
-    Uses both HIBP and LeakCheck APIs.
-    """
+    
     email = request.args.get("email") or request.form.get("email")
     if not email:
         json_data = request.get_json(silent=True)
@@ -72,10 +66,7 @@ def email_check():
 # ---------------- Phishing Email Scan ----------------
 @app.route("/api/phish/check", methods=["POST"])
 def phish_check():
-    """
-    Analyze email content for phishing attempts using CheckPhish API.
-    Accepts raw email text.
-    """
+    
     raw_email = request.form.get("email")
     if not raw_email:
         json_data = request.get_json(silent=True)
@@ -91,11 +82,7 @@ def phish_check():
 # ---------------- URL Safety Check ----------------
 @app.route("/api/url/check", methods=["GET", "POST"])
 def url_check():
-    """
-    Check if a URL is malicious using multiple sources:
-    - Google Safe Browsing
-    - PhishTank
-    """
+    
     url_to_check = request.args.get("url") or request.form.get("url")
     if not url_to_check:
         json_data = request.get_json(silent=True)
@@ -111,10 +98,7 @@ def url_check():
 # ---------------- CISA KEV Feed ----------------
 @app.route("/api/news/cisa", methods=["GET"])
 def cisa_news():
-    """
-    Fetch the latest Known Exploited Vulnerabilities from CISA.
-    Returns a comprehensive list of current cybersecurity threats.
-    """
+    
     result = get_cisa_kev()
     return jsonify(result)
 
@@ -122,16 +106,7 @@ def cisa_news():
 
 @app.route("/api/quiz/start", methods=["POST"])
 def start_quiz():
-    """
-    Start a new quiz session.
-    Returns 20 random questions from the pool.
-    
-    Request body (optional):
-    {
-        "username": "John Doe",
-        "difficulty": "mixed"  // easy, medium, hard, or mixed
-    }
-    """
+  
     json_data = request.get_json(silent=True) or {}
     username = json_data.get("username", "Anonymous")
     difficulty = json_data.get("difficulty", "mixed")
@@ -146,20 +121,7 @@ def start_quiz():
 
 @app.route("/api/quiz/submit", methods=["POST"])
 def submit_quiz():
-    """
-    Submit quiz answers and get results.
     
-    Request body:
-    {
-        "username": "John Doe",
-        "session_id": "abc123",
-        "answers": {
-            "1": "A",
-            "2": "B",
-            ...
-        }
-    }
-    """
     json_data = request.get_json(silent=True)
     
     if not json_data:
@@ -184,11 +146,7 @@ def submit_quiz():
 
 @app.route("/api/quiz/certificate/<session_id>", methods=["GET"])
 def download_certificate(session_id):
-    """
-    Generate and download a PDF certificate for a completed quiz.
-    Query params:
-    - username: Name to appear on certificate (optional)
-    """
+    
     username = request.args.get("username", "Anonymous")
     
     result = generate_certificate(session_id, username)
@@ -262,6 +220,8 @@ def home():
             "quiz_info": "/api/quiz/questions"
         }
     })
+
+#https://testsafebrowsing.appspot.com/s/phishing.html
 
 # ---------------- Error Handlers ----------------
 @app.errorhandler(404)
